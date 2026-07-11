@@ -46,7 +46,7 @@ def provision_new_container(framework):
         mem_limit="128m",
         pids_limit=50,
         read_only=True,
-        tmpfs={'/tmp': 'exec'}
+        tmpfs={'/tmp': 'exec', '/workspace': 'exec,size=64m,uid=1000,gid=1000'}
     )
 
     redis_client.sadd(_get_idle_key(framework), container_id)

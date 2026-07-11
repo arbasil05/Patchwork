@@ -8,6 +8,7 @@ class EditedFile(BaseModel):
 
 class SubmissionRequest(BaseModel):
     idempotency_key:UUID
-    challenge_id:str
+    framework:str
+    challenge_id:int
     base_ref:str
     files: list[EditedFile] = Field(min_length=1)

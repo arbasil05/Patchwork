@@ -1,7 +1,11 @@
+import sys
+import signal
 import time
 import docker
 import redis
 from pool_manager import provision_new_container, FRAMEWORK_IMAGES, _get_idle_key, _get_busy_key
+
+sys.stdout.reconfigure(line_buffering=True)
 
 redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
 docker_client = docker.from_env()
@@ -9,6 +13,46 @@ docker_client = docker.from_env()
 TARGET_BUFFER = 5
 MAX_POOL_SIZE = 50
 CHECK_INTERVAL = 2
+
+running = True
+
+
+def graceful_shutdown(signum, frame):
+    """Handle Ctrl+C: kill every pooled container and flush Redis pool keys."""
+    global running
+    running = False
+    print("\n[Daemon] Shutting down — killing all pooled containers...")
+
+    for framework in FRAMEWORK_IMAGES:
+        idle_key = _get_idle_key(framework)
+        busy_key = _get_busy_key(framework)
+
+        all_ids = redis_client.smembers(idle_key) | redis_client.smembers(busy_key)
+        if not all_ids:
+            print(f"[Daemon][{framework}] No containers to clean up.")
+            continue
+
+        print(f"[Daemon][{framework}] Killing {len(all_ids)} container(s)...")
+        for container_id in all_ids:
+            try:
+                container = docker_client.containers.get(container_id)
+                container.kill()
+                print(f"  ✓ Killed {container_id}")
+            except docker.errors.NotFound:
+                print(f"  ✗ {container_id} already gone")
+            except Exception as e:
+                print(f"  ✗ Error killing {container_id}: {e}")
+
+        redis_client.delete(idle_key, busy_key)
+        print(f"[Daemon][{framework}] Redis keys flushed.")
+
+    print("[Daemon] Shutdown complete.")
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, graceful_shutdown)
+signal.signal(signal.SIGTERM, graceful_shutdown)
+
 
 def get_pool_metrics(framework):
     idle_count = redis_client.scard(_get_idle_key(framework))
@@ -28,11 +72,9 @@ def scale_up_pool(framework, idle_count, total_containers):
                     provision_new_container(framework)
                 except Exception as e:
                     print(f"[Daemon][{framework}] Failed to provision container: {e}")
-                    break # Stop trying if Docker daemon is struggling
+                    break
 
 def scale_down_pool(framework, idle_count, busy_count):
-    # When fully idle: enforce exactly TARGET_BUFFER containers
-    # When jobs are running: allow a cushion to avoid over-reaping
     target = TARGET_BUFFER if busy_count == 0 else TARGET_BUFFER + 5
 
     if idle_count > target:
@@ -44,62 +86,70 @@ def scale_down_pool(framework, idle_count, busy_count):
             container_id = redis_client.spop(idle_key)
             if not container_id:
                 break
-
             try:
                 container = docker_client.containers.get(container_id)
                 container.kill()
-                print(f"[Daemon][{framework}] Successfully reaped container: {container_id}")
+                print(f"[Daemon][{framework}] Reaped: {container_id}")
             except docker.errors.NotFound:
                 pass
             except Exception as e:
-                print(f"[Daemon][{framework}] Error tearing down container {container_id}: {e}")
+                print(f"[Daemon][{framework}] Error tearing down {container_id}: {e}")
 
 def reconcile_orphans(framework):
-    """On startup, kill any {framework}_ containers that Docker knows about but Redis doesn't."""
+    """
+    Two-way reconciliation on startup:
+    1. Kill Docker containers that exist but aren't tracked in Redis.
+    2. Remove Redis entries whose Docker containers no longer exist.
+    """
     idle_key = _get_idle_key(framework)
     busy_key = _get_busy_key(framework)
     known_ids = redis_client.smembers(idle_key) | redis_client.smembers(busy_key)
-    
-    # Filter by the framework prefix configured in pool_manager
+
     all_runner_containers = docker_client.containers.list(filters={"name": f"{framework}_"})
+    running_names = {c.name for c in all_runner_containers}
 
     orphans = [c for c in all_runner_containers if c.name not in known_ids]
-
     if orphans:
-        print(f"[Daemon][{framework}] Found {len(orphans)} orphaned container(s) not in Redis. Reaping...")
+        print(f"[Daemon][{framework}] Found {len(orphans)} orphaned container(s). Reaping...")
         for c in orphans:
             try:
                 c.kill()
-                print(f"[Daemon][{framework}] Reaped orphan: {c.name}")
+                print(f"  ✓ Reaped orphan: {c.name}")
             except Exception as e:
-                print(f"[Daemon][{framework}] Failed to reap orphan {c.name}: {e}")
-    else:
-        print(f"[Daemon][{framework}] No orphaned containers found.")
+                print(f"  ✗ Failed to reap {c.name}: {e}")
+
+    stale_ids = known_ids - running_names
+    if stale_ids:
+        print(f"[Daemon][{framework}] Found {len(stale_ids)} stale Redis entries. Cleaning...")
+        for stale_id in stale_ids:
+            redis_client.srem(idle_key, stale_id)
+            redis_client.srem(busy_key, stale_id)
+            print(f"  ✓ Removed stale: {stale_id}")
+
+    if not orphans and not stale_ids:
+        print(f"[Daemon][{framework}] Pool is clean.")
 
 def run_daemon():
-    print(f"[Daemon] Preemptive scaling daemon started. Target Buffer: {TARGET_BUFFER}, Max Capacity: {MAX_POOL_SIZE} (per framework)")
+    print(f"[Daemon] Preemptive scaling daemon started. Target: {TARGET_BUFFER}, Max: {MAX_POOL_SIZE} (per framework)")
     print(f"[Daemon] Supported frameworks: {', '.join(FRAMEWORK_IMAGES.keys())}")
+    print(f"[Daemon] Press Ctrl+C to shut down and kill all containers.\n")
 
-    # Reconcile orphans for all frameworks on startup
     for framework in FRAMEWORK_IMAGES:
         reconcile_orphans(framework)
 
-    while True:
+    while running:
         try:
-            # Iterate through every framework and evaluate scaling independently
             for framework in FRAMEWORK_IMAGES:
                 idle_count, busy_count = get_pool_metrics(framework)
                 total_containers = idle_count + busy_count
-                
-                # Check Scale Up Condition
                 scale_up_pool(framework, idle_count, total_containers)
-
-                # Check Scale Down Condition
                 scale_down_pool(framework, idle_count, busy_count)
-            
+
         except Exception as e:
             print(f"[Daemon] Loop error: {e}")
-            
+            import traceback
+            traceback.print_exc()
+
         time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":

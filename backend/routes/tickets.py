@@ -32,7 +32,7 @@ async def submit_ticket(req:SubmissionRequest):
             "message": "Already exists"
         }
 
-    challenge = await github_service.get_challenge(req.challenge_id)
+    challenge = await github_service.get_challenge(req.framework, req.challenge_id)
 
     if challenge is None:
         raise HTTPException(
@@ -56,10 +56,10 @@ async def submit_ticket(req:SubmissionRequest):
     
     job = task_queue.enqueue(
         run_submission,
-        project
+        req.framework,
+        project,
+        job_id=idempotency_key
     )
-
-    await redis_conn.set(f"idempotency:{idempotency_key}", job.id, ex=60*60*24*2)
 
     return {
         "message": "Submission queued",
