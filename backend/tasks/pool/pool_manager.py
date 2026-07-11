@@ -35,19 +35,31 @@ def provision_new_container(framework):
     image = FRAMEWORK_IMAGES[framework]
     container_id = f"{framework}_{uuid.uuid4().hex[:8]}"
 
-    container = docker_client.containers.run(
-        image=image,
+    run_kwargs = {
+        "image": image,
         # this command will keep the container running forever
-        command=["sh", "-c", "tail -f /dev/null"], #starts a shell inside the container,-c : execute the following command, tail : eof ,-f : keep the file forever and /dev/null : accepts anything written to it and never stores anything
-        name=container_id,
-        detach=True,
-        remove=True,
-        network_disabled=True,
-        mem_limit="128m",
-        pids_limit=50,
-        read_only=True,
-        tmpfs={'/tmp': 'exec', '/workspace': 'exec,size=64m,uid=1000,gid=1000'}
-    )
+        "command": ["sh", "-c", "tail -f /dev/null"],
+        "name": container_id,
+        "detach": True,
+        "remove": True,
+        "network_disabled": True,
+        "mem_limit": "256m",
+        "pids_limit": 256,
+    }
+
+    if framework == "express":
+        # Express needs the pre-installed node_modules inside /workspace to be visible.
+        # We cannot mount an empty tmpfs over it. To allow writing submission files,
+        # we must disable read_only for this framework.
+        run_kwargs["read_only"] = False
+        run_kwargs["tmpfs"] = {'/tmp': 'exec'}
+    else:
+        # Python frameworks don't need dependencies in /workspace, so they can use
+        # a strict read-only root with an empty tmpfs for the workspace.
+        run_kwargs["read_only"] = True
+        run_kwargs["tmpfs"] = {'/tmp': 'exec', '/workspace': 'exec,size=64m,uid=1000,gid=1000'}
+
+    container = docker_client.containers.run(**run_kwargs)
 
     redis_client.sadd(_get_idle_key(framework), container_id)
     print(f"[Pool] Provisioned {framework} warm container: {container_id}")
