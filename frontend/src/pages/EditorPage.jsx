@@ -42,7 +42,7 @@ function EditorPage() {
       fileModelsRef.current.forEach(model => model.dispose());
       fileModelsRef.current.clear();
       
-      const files = Object.keys(data.files).sort((a,b) => {
+      const files = Object.keys(data.files).filter(f => f !== 'production.log' && !f.includes('test')).sort((a,b) => {
         const aEd = data.editable_files.includes(a);
         const bEd = data.editable_files.includes(b);
         if (aEd && !bEd) return -1;
@@ -191,9 +191,38 @@ function EditorPage() {
   const isCurrentFileEditable = challengeData?.editable_files.includes(currentFile);
 
   return (
-    <div id="editor-view" style={{ display: 'flex', height: '100%', width: '100%', flexDirection: 'column' }}>
+    <div id="editor-view" style={{ display: 'flex', flex: 1, minHeight: 0, width: '100%', flexDirection: 'column' }}>
       <div id="app" className="cf-container">
         <div id="left-panel">
+          {challengeData?.ticket && (
+            <div className="cf-card ticket-container">
+              <div className="cf-card-header">Ticket Information</div>
+              <div className="cf-card-body">
+                <div className="ticket-grid">
+                  <div><strong>ID:</strong> {challengeData.ticket.id}</div>
+                  <div><strong>Priority:</strong> {challengeData.ticket.priority}</div>
+                  <div><strong>Status:</strong> {challengeData.ticket.status}</div>
+                  <div><strong>Environment:</strong> {challengeData.ticket.environment}</div>
+                  <div><strong>Reporter:</strong> {challengeData.ticket.reporter}</div>
+                  <div><strong>Assignee:</strong> {challengeData.ticket.assignee}</div>
+                </div>
+                <div className="ticket-summary">
+                  <strong>Summary:</strong> {challengeData.ticket.summary}
+                </div>
+                {challengeData.ticket.acceptance_criteria && (
+                  <div className="ticket-criteria">
+                    <strong>Acceptance Criteria:</strong>
+                    <ul>
+                      {challengeData.ticket.acceptance_criteria.map((criteria, idx) => (
+                        <li key={idx}>{criteria}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="cf-card description-container">
             <div className="cf-card-header">Problem Statement</div>
             <div className="cf-card-body">
@@ -213,6 +242,13 @@ function EditorPage() {
                 </div>
               )}
             </div>
+          </div>
+
+          <div className="cf-card terminal-container">
+             <div className="cf-card-header terminal-header">Production Logs</div>
+             <div className="cf-card-body terminal-body">
+                {challengeData?.artifacts?.find(a => a.type === 'log')?.content || challengeData?.files['production.log'] || 'No logs available.'}
+             </div>
           </div>
 
           <div className="cf-card action-container">

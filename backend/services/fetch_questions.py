@@ -7,6 +7,8 @@ class ChallengeModel(BaseModel):
     description: str
     editable_files: list[str]
     files: dict[str, str]
+    ticket: Optional[dict] = None
+    artifacts: Optional[list[dict]] = None
 
 class AllChallenge(BaseModel):
     question_id : int
@@ -44,7 +46,9 @@ async def get_challenge(framework: str, challenge_id: int) -> Optional[Challenge
             title=document.get("title", ""),
             description=document.get("description", ""),
             editable_files=editable_files,
-            files=files_dict
+            files=files_dict,
+            ticket=document.get("ticket"),
+            artifacts=document.get("artifacts")
         )
 
     except Exception as e:

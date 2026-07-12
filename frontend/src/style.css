@@ -140,8 +140,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  height: 100%;
-  overflow: hidden;
+  overflow-y: auto;
+  padding-right: 5px;
 }
 
 #right-panel {
@@ -151,7 +151,6 @@ body {
   display: flex;
   flex-direction: row;
   overflow: hidden;
-  height: 100%;
   background-color: var(--cf-bg);
 }
 
@@ -163,11 +162,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-.description-container {
-  flex: 1;
-  min-height: 0;
+  flex-shrink: 0;
 }
 
 .cf-card-header {
@@ -787,3 +782,54 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* TICKET STYLES */
+.ticket-container {
+  margin-bottom: 15px;
+}
+.ticket-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 13px;
+}
+.ticket-grid strong {
+  color: var(--cf-text-main);
+}
+.ticket-grid div {
+  color: var(--cf-text-muted);
+}
+.ticket-summary {
+  margin-top: 12px;
+  font-size: 13px;
+}
+.ticket-criteria {
+  margin-top: 12px;
+  font-size: 13px;
+}
+.ticket-criteria ul {
+  margin: 4px 0 0 20px;
+  padding: 0;
+  color: var(--cf-text-muted);
+}
+
+/* TERMINAL LOGS */
+.terminal-container {
+  margin-top: 15px;
+  background-color: #000;
+  color: #00ff00;
+  font-family: "Courier New", Courier, monospace;
+}
+.terminal-header {
+  background-color: #111;
+  color: #ccc;
+  border-bottom: 1px solid #333;
+}
+.terminal-body {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 1.4;
+  height: 200px;
+  overflow-y: auto;
+}
+
