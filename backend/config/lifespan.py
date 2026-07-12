@@ -1,7 +1,8 @@
 from config.mongo_db import client
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-
+from config.sql_db import engine, Base
+import models.user_model  # Ensure models are loaded
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -13,6 +14,11 @@ async def lifespan(app:FastAPI):
         print("Successfully connected to mongodb Atlas")
     except Exception as e:
         print(f"Failed to connect to MongoDB: {e}")
+        
+    print("Initializing SQLite tables...")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    print("SQLite tables initialized")
     
     yield
 

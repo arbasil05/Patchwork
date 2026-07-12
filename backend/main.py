@@ -1,5 +1,5 @@
 from config.lifespan import lifespan
-from routes import tickets
+from routes import tickets, user_routes
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -18,3 +18,4 @@ def health_check():
     return {"status": "ok"}
 
 app.include_router(tickets.router)
+app.include_router(user_routes.router)
