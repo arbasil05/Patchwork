@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patchwork Challenge Workspace</title>
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <div id="cf-page-wrapper">
+      <!-- Top header bar -->
+      <div id="cf-header">
+        <div class="header-left">
+          <div class="logo-container">
+            <span class="logo-text">PATCHWORK</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="user-info">
+            <span class="user-rank-pupil">arbasil05</span> | <a href="#" class="cf-link">Logout</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation tabs -->
+      <div id="cf-nav">
+        <ul class="nav-links">
+          <li class="active"><a href="#" id="nav-home">HOME</a></li>
+        </ul>
+      </div>
+
+      <!-- Homepage View -->
+      <div id="homepage-view" class="homepage-container" style="display: none;">
+        <div class="homepage-section">
+          <h2 class="section-title">Available Stacks</h2>
+          <p class="section-subtitle">Select a framework to browse debugging challenges.</p>
+          <div class="framework-grid" id="framework-grid"></div>
+        </div>
+
+        <div class="homepage-section problems-section" id="problems-section">
+          <div class="empty-state" id="empty-state">
+            <h3>Choose a Stack</h3>
+            <p>Select a framework above to browse real-world debugging challenges and start solving.</p>
+            <div class="empty-illustration">{ }</div>
+          </div>
+          
+          <div id="problems-content" style="display: none;">
+            <div class="problems-header">
+              <h3 id="problems-framework-title">Problems</h3>
+              <span id="problems-count">0 problems</span>
+            </div>
+            
+            <div class="problems-toolbar">
+              <input type="text" id="problem-search" placeholder="Search problems...">
+              <select id="difficulty-filter" class="cf-select">
+                <option value="All">All Difficulty</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+              <select id="status-filter" class="cf-select">
+                <option value="All">All Status</option>
+                <option value="Solved">Solved</option>
+                <option value="Attempted">Attempted</option>
+                <option value="Unsolved">Unsolved</option>
+              </select>
+            </div>
+
+            <table class="cf-table">
+              <thead>
+                <tr>
+                  <th style="width: 60px; text-align: center;">Status</th>
+                  <th>Problem</th>
+                  <th style="width: 100px;">Difficulty</th>
+                  <th style="width: 120px;">Acceptance</th>
+                  <th style="width: 100px; text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="problems-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="cf-footer">
+          <div class="footer-left">© 2026 Patchwork</div>
+          <div class="footer-right">Built with ❤️ for developers</div>
+        </div>
+      </div>
+
+      <!-- Main layout -->
+      <div id="editor-view" style="display: none; height: 100%; width: 100%; flex-direction: column;">
+        <div id="app" class="cf-container">
+          <div id="left-panel">
+
+          <!-- Problem Statement Box -->
+          <div class="cf-card description-container">
+            <div class="cf-card-header">Problem Statement</div>
+            <div class="cf-card-body">
+              <div class="cf-problem-statement">
+                <div class="header">
+                  <h1 id="challenge-title" class="title">Welcome to Patchwork</h1>
+                  <div class="memory-limit">memory limit per test: 256 megabytes</div>
+                  <div class="input-file">input: standard input</div>
+                  <div class="output-file">output: standard output</div>
+                </div>
+                <div id="challenge-description" class="markdown-body">
+                  <p>Load a challenge to get started.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Box -->
+          <div class="cf-card action-container">
+            <div class="cf-card-header">Submit Area</div>
+            <div class="cf-card-body">
+              <button id="btn-submit" class="cf-btn cf-btn-submit" disabled>Submit Challenge</button>
+              <div id="status-container"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="right-panel">
+          <div id="file-sidebar">
+            <div class="sidebar-header">
+              <span class="sidebar-title">Files</span>
+              <button id="toggle-sidebar-btn" title="Toggle Sidebar">«</button>
+            </div>
+            <div id="file-list"></div>
+          </div>
+          <div id="editor-area">
+            <div id="tabs-container"></div>
+            <div id="editor-container"></div>
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

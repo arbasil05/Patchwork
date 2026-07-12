@@ -1,6 +1,6 @@
 from tasks.tasks import run_submission
 from fastapi import HTTPException
-from services import github_service
+from services import fetch_questions
 from schema.ticketSchema import SubmissionRequest
 from fastapi import APIRouter
 from redis.asyncio import Redis as AsyncRedis
@@ -32,7 +32,7 @@ async def submit_ticket(req:SubmissionRequest):
             "message": "Already exists"
         }
 
-    challenge = await github_service.get_challenge(req.framework, req.challenge_id)
+    challenge = await fetch_questions.get_challenge(req.framework, req.challenge_id)
 
     if challenge is None:
         raise HTTPException(
@@ -80,6 +80,23 @@ def get_status(job_id):
             status_code=404,
             detail="job not found"
         )
-    
-    
 
+@router.get("/challenge/{framework}")
+async def get_challenges_by_framework(framework:str):
+    challenges = await fetch_questions.get_challenges(framework)
+    if challenges is None:
+        raise HTTPException(
+            status_code=404,
+            detail="challenges not found"
+        )
+    return challenges
+
+@router.get("/challenge/{framework}/{challenge_id}")
+async def get_challenge_info(framework: str, challenge_id: int):
+    challenge = await fetch_questions.get_challenge(framework, challenge_id)
+    if challenge is None:
+        raise HTTPException(
+            status_code=404,
+            detail="challenge not found"
+        )
+    return challenge
