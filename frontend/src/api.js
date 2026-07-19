@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'http://13.127.255.138:8000';
 
 const cache = new Map();
 

@@ -4,8 +4,8 @@ import { marked } from 'marked';
 import { fetchChallengeDetails } from '../api.js';
 import MonacoEditor from '../components/MonacoEditor.jsx';
 import * as monaco from 'monaco-editor';
-
-const API_BASE_URL = 'http://localhost:8000';
+import { v4 as uuidv4 } from "uuid";
+const API_BASE_URL = 'http://13.127.255.138:8000';
 
 function EditorPage() {
   const { framework, challengeId } = useParams();
@@ -119,7 +119,7 @@ function EditorPage() {
     });
 
     const payload = {
-      idempotency_key: crypto.randomUUID(),
+      idempotency_key: uuidv4(),
       framework: framework,
       challenge_id: parseInt(challengeId),
       base_ref: 'main',
