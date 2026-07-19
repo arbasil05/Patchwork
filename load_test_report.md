@@ -1,7 +1,7 @@
 # Load Test Report
 
-Throughput: 0.72 req/s
+Throughput: 4.38 req/s
 Bottleneck: CPU (System)
-Peak RAM: 85.4%
-Peak CPU: 99.7%
-Peak Queue Backlog: 147
+Peak RAM: 41.0%
+Peak CPU: 93.2%
+Peak Queue Backlog: 1813

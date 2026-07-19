@@ -7,7 +7,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from redis import Redis as SyncRedis
 from rq import SimpleWorker, Queue
 
-redis_con = SyncRedis(host="localhost", port=6379)
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_con = SyncRedis(host=redis_host, port=6379)
 
 if __name__ == "__main__":
     worker = SimpleWorker(queues=["submission_queue"], connection=redis_con)

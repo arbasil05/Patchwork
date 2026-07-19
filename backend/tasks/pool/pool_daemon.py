@@ -3,15 +3,17 @@ import signal
 import time
 import docker
 import redis
+import os
 from pool_manager import provision_new_container, FRAMEWORK_IMAGES, _get_idle_key, _get_busy_key
 
 sys.stdout.reconfigure(line_buffering=True)
 
-redis_client = redis.Redis(host='localhost', port=6379, decode_responses=True)
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_client = redis.Redis(host=redis_host, port=6379, decode_responses=True)
 docker_client = docker.from_env()
 
-TARGET_BUFFER = 5
-MAX_POOL_SIZE = 50
+TARGET_BUFFER = 3
+MAX_POOL_SIZE = 10
 CHECK_INTERVAL = 2
 
 running = True

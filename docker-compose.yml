@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+
+  worker:
+    build:
+      context: ./backend
+    command: ["python", "worker/worker.py"]
+    volumes:
+      - ./backend:/app
+      # Give worker access to Docker daemon so it can execute code inside pooled containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+
+  pool_daemon:
+    build:
+      context: ./backend
+    command: ["python", "tasks/pool/pool_daemon.py"]
+    volumes:
+      - ./backend:/app
+      # Give daemon access to Docker daemon to manage the container pool
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - PYTHONUNBUFFERED=1
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

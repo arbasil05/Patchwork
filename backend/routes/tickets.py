@@ -7,9 +7,11 @@ from redis.asyncio import Redis as AsyncRedis
 from redis import Redis as SyncRedis
 from rq import Queue
 from rq.job import Job
+import os
 
-redis_conn = AsyncRedis(host="localhost", port=6379)
-sync_redis_conn = SyncRedis(host="localhost", port=6379)
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_conn = AsyncRedis(host=redis_host, port=6379)
+sync_redis_conn = SyncRedis(host=redis_host, port=6379)
 task_queue = Queue("submission_queue", connection=sync_redis_conn)
 
 router = APIRouter(prefix="/ticket",tags=["ticket"])

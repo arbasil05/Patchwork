@@ -2,9 +2,11 @@ import uuid
 import docker
 from redis import Redis
 import time
+import os
 import random
 
-redis_client = Redis(host="localhost", port=6379, decode_responses=True)
+redis_host = os.getenv("REDIS_HOST", "localhost")
+redis_client = Redis(host=redis_host, port=6379, decode_responses=True)
 docker_client = docker.from_env()
 
 FRAMEWORK_IMAGES = {
